@@ -234,6 +234,7 @@ import {
   unchangedVisualStreakAfterPageBrowser,
 } from "./computer-tools.js";
 import { checkpointRunComputerWorkspace } from "./computer-workspace.js";
+import { listConnectedModels } from "./connected-models.js";
 import { redactConnectorPayload, sanitizeConnectorError } from "./connector-safety.js";
 import { formatCurrentTimeInstruction } from "./current-time.js";
 import { resolveDeploymentModel } from "./deployment-model.js";
@@ -392,6 +393,7 @@ const READ_ONLY_AGENT_TOOLS = new Set([
   "read_history",
   "search_history",
   "request_takeover",
+  "list_models",
   "run_subagent",
   "task_catalog",
   "recall_memory",
@@ -5984,6 +5986,16 @@ export function createRunExecutor(deps: ExecutorDeps) {
             return pauseForSecret();
           }
           if (name === "request_takeover") return { ok: true };
+          if (name === "list_models") {
+            const models = await listConnectedModels(
+              deps.prisma,
+              deps.secretStore,
+              run,
+              String(args.query ?? ""),
+              deps.codexCatalog,
+            );
+            return finish({ models });
+          }
           if (name === "run_subagent") {
             return {
               ok: true,
@@ -6017,6 +6029,20 @@ export function createRunExecutor(deps: ExecutorDeps) {
               }
               computerMode = value;
             }
+            const modelProvider = String(args.model_provider ?? "").trim();
+            const modelId = String(args.model_id ?? "").trim();
+            if (Boolean(modelProvider) !== Boolean(modelId)) {
+              return finish({ error: "model_provider and model_id must both be set" });
+            }
+            if (modelProvider && modelId) {
+              try {
+                await resolveConnectedModel(run, modelProvider, modelId, registerRunSecrets, true);
+              } catch (error) {
+                return finish({
+                  error: error instanceof Error ? error.message : "Model unavailable",
+                });
+              }
+            }
             const spawned = await spawnBot(deps, {
               spawnedBy: {
                 id: bot.id,
@@ -6030,6 +6056,8 @@ export function createRunExecutor(deps: ExecutorDeps) {
               title: args.title ? String(args.title) : undefined,
               instructions: args.instructions ? String(args.instructions) : undefined,
               prompt: args.prompt ? String(args.prompt) : undefined,
+              modelProvider: modelProvider || undefined,
+              modelId: modelId || undefined,
               computerMode,
             });
             if ("error" in spawned) return finish(spawned);

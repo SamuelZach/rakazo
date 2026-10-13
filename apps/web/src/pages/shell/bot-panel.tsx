@@ -539,6 +539,36 @@ export function BotSettings({
           }}
         />
       </div>
+      <label htmlFor={`${ids}-model`} className={fieldLabelClass}>
+        <Trans>Model</Trans>
+        <NativeSelect
+          id={`${ids}-model`}
+          className="mt-2 w-full"
+          value={selectedModelKey}
+          onChange={(event) => {
+            setModelKey(event.target.value);
+            setThinkingLevel("");
+          }}
+        >
+          <NativeSelectOption value="">
+            {t`Space default`}
+            {me?.defaultModel
+              ? ` (${catalogLabel(catalog, me.defaultProvider, me.defaultModel) ?? me.defaultModel})`
+              : ""}
+          </NativeSelectOption>
+          {selectedModelKey &&
+          !connectedOptions.some((option) => option.key === selectedModelKey) ? (
+            <NativeSelectOption value={selectedModelKey}>
+              {selectedModel?.modelId ?? selectedModelKey}
+            </NativeSelectOption>
+          ) : null}
+          {connectedOptions.map((option) => (
+            <NativeSelectOption key={option.key} value={option.key}>
+              {option.label}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
+      </label>
       <details
         data-testid="bot-settings-advanced"
         className="group mt-5"
@@ -567,36 +597,6 @@ export function BotSettings({
             </Suspense>
           </ErrorBoundary>
         ) : null}
-        <label htmlFor={`${ids}-model`} className={fieldLabelClass}>
-          <Trans>Model</Trans>
-          <NativeSelect
-            id={`${ids}-model`}
-            className="mt-2 w-full"
-            value={selectedModelKey}
-            onChange={(event) => {
-              setModelKey(event.target.value);
-              setThinkingLevel("");
-            }}
-          >
-            <NativeSelectOption value="">
-              {t`Space default`}
-              {me?.defaultModel
-                ? ` (${catalogLabel(catalog, me.defaultProvider, me.defaultModel) ?? me.defaultModel})`
-                : ""}
-            </NativeSelectOption>
-            {selectedModelKey &&
-            !connectedOptions.some((option) => option.key === selectedModelKey) ? (
-              <NativeSelectOption value={selectedModelKey}>
-                {selectedModel?.modelId ?? selectedModelKey}
-              </NativeSelectOption>
-            ) : null}
-            {connectedOptions.map((option) => (
-              <NativeSelectOption key={option.key} value={option.key}>
-                {option.label}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-        </label>
         {thinkingOptions.length ? (
           <label htmlFor={`${ids}-thinking`} className={fieldLabelClass}>
             <Trans>Thinking</Trans>

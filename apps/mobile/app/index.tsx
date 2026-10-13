@@ -1248,7 +1248,9 @@ const BotRow = memo(function BotRow({
   // Only flat avatars carry a usable color; image avatars fall back to the muted dot.
   const presentation = mobileBotAvatarPresentation(bot.color || FALLBACK_COLOR);
   const tint =
-    presentation.kind === "shape" || presentation.kind === "color" ? presentation.color : undefined;
+    presentation.kind === "shape" || presentation.kind === "color" || presentation.kind === "liquid"
+      ? presentation.color
+      : undefined;
   // Spelled out because an explicit label replaces the one built from the row's children.
   const label = [
     bot.name,

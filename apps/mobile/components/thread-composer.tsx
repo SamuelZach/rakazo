@@ -4,10 +4,12 @@ import type { AgentSkillCatalogEntry } from "@rakazo/contracts";
 import type { buildComposerMentionOptions, ComposerMention, SlashActionId } from "@rakazo/core";
 import {
   mentionChipKey,
+  resolvePersonaColorDef,
   SLASH_ACTIONS,
   serializeComposerPrompt,
   truncateSlashDescription,
 } from "@rakazo/core";
+import { botMessageColors } from "@rakazo/ui-tokens";
 import type { Ref } from "react";
 import { useImperativeHandle, useMemo, useState } from "react";
 import type { ViewStyle } from "react-native";
@@ -32,6 +34,7 @@ type ThreadComposerProps = {
   replyQuote: string | null;
   attachmentIds: string[];
   botId?: string;
+  botColor?: string;
   onCall: boolean;
   working: boolean;
   sending: boolean;
@@ -53,6 +56,7 @@ export function ThreadComposer({
   replyQuote,
   attachmentIds,
   botId,
+  botColor,
   onCall,
   working,
   sending,
@@ -65,6 +69,9 @@ export function ThreadComposer({
   onSlashAction,
 }: ThreadComposerProps) {
   const tokens = useMobileTokens();
+  const sendColors = botId
+    ? botMessageColors(resolvePersonaColorDef(botId, botColor).hex)
+    : { background: tokens.primary, foreground: tokens.primaryForeground };
   const colorScheme = useResolvedAppearance();
   const { t } = useI18n();
   const [draft, setDraft] = useState("");
@@ -497,15 +504,15 @@ export function ThreadComposer({
               style={{ marginBottom: 8, opacity: sending || !canSend ? 0.5 : 1 }}
             >
               <GlassSurface
-                tint={tokens.primary}
+                tint={sendColors.background}
                 style={composerPillStyle}
-                fallbackStyle={{ backgroundColor: tokens.primary }}
+                fallbackStyle={{ backgroundColor: sendColors.background }}
               >
                 <NativeSymbol
                   ios="arrow.up"
                   android="arrow-up"
                   size={15}
-                  color={tokens.primaryForeground}
+                  color={sendColors.foreground}
                 />
               </GlassSurface>
             </Pressable>

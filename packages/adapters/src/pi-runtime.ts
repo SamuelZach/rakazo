@@ -1131,6 +1131,8 @@ function toAgentTool(tool: ConnectorTool, host: ToolHost, exposedName: string): 
           title: raw.title ? String(raw.title) : "",
           instructions: raw.instructions ? String(raw.instructions) : "",
           prompt: raw.prompt ? String(raw.prompt) : "",
+          model_provider: raw.model_provider ? String(raw.model_provider) : "",
+          model_id: raw.model_id ? String(raw.model_id) : "",
           computer_mode: raw.computer_mode ? String(raw.computer_mode) : "",
         };
       }
@@ -1706,6 +1708,8 @@ function builtinParameters(tool: ConnectorTool) {
       title: Type.Optional(Type.String()),
       instructions: Type.Optional(Type.String()),
       prompt: Type.Optional(Type.String()),
+      model_provider: Type.Optional(Type.String()),
+      model_id: Type.Optional(Type.String()),
       computer_mode: Type.Optional(stringEnum(["team", "dedicated"], {})),
     });
   }

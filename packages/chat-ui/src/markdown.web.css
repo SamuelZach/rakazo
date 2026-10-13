@@ -3,6 +3,10 @@
   overflow-wrap: anywhere;
 }
 
+.rk-chat-markdown strong {
+  font-weight: 600;
+}
+
 .rk-chat-markdown > :first-child,
 .rk-chat-markdown > :first-child > :first-child {
   margin-top: 0;

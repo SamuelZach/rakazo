@@ -982,6 +982,17 @@ export const builtinAgentTools: ConnectorTool[] = [
     },
   },
   {
+    name: "list_models",
+    description:
+      "Search the models available through this user's connected accounts in the current space. Returns display names and exact model_provider/model_id pairs, including configured custom models. Use this before choosing a model for run_subagent or spawn_bot; never guess model IDs or providers.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Optional model name, ID, or provider search." },
+      },
+    },
+  },
+  {
     name: "run_subagent",
     description:
       "Run a short-lived helper inside this turn only. It is not a bot: no list entry, no thread, no computer of its own, and it disappears when this turn ends. Never call this because the user asked to create a bot — that is spawn_bot, and spawn_bot alone.",
@@ -999,11 +1010,13 @@ export const builtinAgentTools: ConnectorTool[] = [
         },
         model_provider: {
           type: "string",
-          description: "Optional connected model provider. Set together with model_id.",
+          description:
+            "Optional connected model provider from list_models. Set together with model_id.",
         },
         model_id: {
           type: "string",
-          description: "Optional connected model ID. Set together with model_provider.",
+          description:
+            "Optional exact model ID from list_models. Set together with model_provider.",
         },
       },
       required: ["name", "task"],
@@ -1039,6 +1052,16 @@ export const builtinAgentTools: ConnectorTool[] = [
         prompt: {
           type: "string",
           description: "Optional first task to run in the new bot's thread.",
+        },
+        model_provider: {
+          type: "string",
+          description:
+            "Optional connected provider from list_models. Set together with model_id; otherwise inherit this bot's model.",
+        },
+        model_id: {
+          type: "string",
+          description:
+            "Optional exact model ID from list_models. Set together with model_provider.",
         },
         computer_mode: {
           type: "string",

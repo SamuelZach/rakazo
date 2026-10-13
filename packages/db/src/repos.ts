@@ -451,7 +451,13 @@ export function createRepos(prisma: PrismaClient) {
           modelProvider = parent.modelProvider ?? null;
           modelId = parent.modelId ?? null;
         }
-        if (thinkingLevel == null) thinkingLevel = parent.thinkingLevel ?? null;
+        if (
+          thinkingLevel == null &&
+          modelProvider === (parent.modelProvider ?? null) &&
+          modelId === (parent.modelId ?? null)
+        ) {
+          thinkingLevel = parent.thinkingLevel ?? null;
+        }
         if (input.disabledBuiltinTools === undefined) {
           disabledBuiltinTools = parent.disabledBuiltinTools;
         }

@@ -122,7 +122,7 @@ function markdownStyles(palette: ColorTokens) {
     },
     strong: {
       color: palette.foreground,
-      fontWeight: "700",
+      fontWeight: "600",
     },
     link: {
       color: palette.link,
