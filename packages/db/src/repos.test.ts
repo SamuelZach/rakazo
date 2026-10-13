@@ -427,3 +427,62 @@ describe("createRepos.reorderBots", () => {
     expect(update).not.toHaveBeenCalled();
   });
 });
+
+describe("spawned bot model inheritance", () => {
+  it.each([
+    { override: {}, provider: "openai", modelId: "parent-model", thinkingLevel: "high" },
+    {
+      override: { modelProvider: "other-provider", modelId: "child-model" },
+      provider: "other-provider",
+      modelId: "child-model",
+      thinkingLevel: null,
+    },
+  ])(
+    "keeps thinking only when the child uses the parent model ($modelId)",
+    async ({ override, provider, modelId, thinkingLevel }) => {
+      const stop = new Error("captured insert");
+      const create = vi.fn(async () => {
+        throw stop;
+      });
+      const tx = {
+        $queryRaw: vi.fn(async () => []),
+        spaceMember: {
+          findUnique: vi.fn(async () => ({ organizationId: "org-1", space: { deletingAt: null } })),
+        },
+        bot: { aggregate: vi.fn(async () => ({ _max: { position: 0 } })), create },
+        computer: { upsert: vi.fn(async () => ({ id: "computer-1" })) },
+      };
+      const prisma = {
+        bot: {
+          findFirst: vi.fn(async () => ({
+            modelProvider: "openai",
+            modelId: "parent-model",
+            thinkingLevel: "high",
+            disabledBuiltinTools: [],
+          })),
+        },
+        deploymentSettings: { findUnique: vi.fn(async () => null) },
+        $transaction: vi.fn(async (callback: (client: typeof tx) => Promise<unknown>) =>
+          callback(tx),
+        ),
+      } as unknown as PrismaClient;
+      await expect(
+        createRepos(prisma).createBot(actor, {
+          name: "Child",
+          title: "",
+          description: "",
+          instructions: "",
+          color: "#000000",
+          notifyOnFinish: true,
+          parentBotId: "parent-1",
+          ...override,
+        }),
+      ).rejects.toBe(stop);
+      expect(create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ modelProvider: provider, modelId, thinkingLevel }),
+        }),
+      );
+    },
+  );
+});

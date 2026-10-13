@@ -492,6 +492,12 @@ export default function BotSettingsScreen() {
             voiceRow
           )
         ) : null}
+        <MenuPicker
+          choices={modelChoices}
+          label={t("Model")}
+          onChange={selectModel}
+          value={selectedModelKey}
+        />
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t("Advanced")}
@@ -518,12 +524,6 @@ export default function BotSettingsScreen() {
                 overflow: "hidden",
               }}
             >
-              <MenuPicker
-                choices={modelChoices}
-                label={t("Model")}
-                onChange={selectModel}
-                value={selectedModelKey}
-              />
               {thinkingOptions.length ? (
                 <MenuPicker
                   choices={thinkingChoices}

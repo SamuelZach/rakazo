@@ -91,6 +91,7 @@ import { AskActions } from "../components/AskActions";
 import { BotAvatar } from "../components/bot-avatar";
 import { ChoiceCard } from "../components/ChoiceCard";
 import { ComputerCard } from "../components/ComputerCard";
+import { ChatModelPicker } from "../components/chat-model-picker";
 import { ComposerReplyPreview } from "../components/composer-reply-preview";
 import { FailedSendBubble } from "../components/failed-send-bubble";
 import { GlassSurface } from "../components/glass-surface";
@@ -2557,6 +2558,17 @@ function Thread({ sessionEpoch }: { sessionEpoch: number }) {
               </View>
             ))}
           </View>
+        ) : null}
+        {!inGroup && currentBot && !readOnly ? (
+          <ChatModelPicker
+            key={currentBot.id}
+            bot={currentBot}
+            onChanged={(updated) => {
+              setMentionBots((current) =>
+                current.map((bot) => (bot.id === updated.id ? { ...bot, ...updated } : bot)),
+              );
+            }}
+          />
         ) : null}
         <ThreadComposer
           key={threadKey}

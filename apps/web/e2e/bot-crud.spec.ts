@@ -99,7 +99,7 @@ test("bot creation, editing, and deletion persist", async ({ page }, testInfo) =
   const teamComputer = settings.getByRole("button", { name: "Team" });
   const openWork = settings.getByTestId("bot-scratchpad");
   await expect(teamComputer).toBeHidden();
-  await expect(modelSelect).toBeHidden();
+  await expect(modelSelect).toBeVisible();
   await expect(openWork).toBeHidden();
   await expect(settings.getByRole("button", { name: "Save", exact: true })).toBeVisible();
   await expect(settings.getByRole("button", { name: "Recover computer" })).toHaveCount(0);

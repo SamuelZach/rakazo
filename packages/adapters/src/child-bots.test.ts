@@ -131,7 +131,7 @@ describe("spawned bot creation", () => {
     expect(enqueue).toHaveBeenCalledOnce();
   });
 
-  it("passes computerMode through to createBot", async () => {
+  it("passes the computer and model choices through to createBot", async () => {
     const createBot = vi.fn().mockResolvedValue({
       id: "child-2",
       name: "Painter",
@@ -158,6 +158,8 @@ describe("spawned bot creation", () => {
         spawnKey: "tool-call-2",
         name: "Painter",
         computerMode: "dedicated",
+        modelProvider: "openai",
+        modelId: "gpt-test",
       },
     );
 
@@ -166,6 +168,8 @@ describe("spawned bot creation", () => {
       expect.objectContaining({
         name: "Painter",
         computerMode: "dedicated",
+        modelProvider: "openai",
+        modelId: "gpt-test",
         parentBotId: "parent-1",
       }),
     );

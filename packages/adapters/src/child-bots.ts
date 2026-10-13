@@ -62,6 +62,8 @@ export async function spawnBot(
     instructions?: string;
     prompt?: string;
     computerMode?: ComputerMode;
+    modelProvider?: string;
+    modelId?: string;
   },
 ) {
   const name = input.name.trim();
@@ -85,6 +87,8 @@ export async function spawnBot(
       parentBotId: input.spawnedBy.id,
       spawnKey: input.spawnKey,
       computerMode: input.computerMode,
+      modelProvider: input.modelProvider,
+      modelId: input.modelId,
       initialMessage: {
         role: "system",
         blocks: [{ kind: "meta", text: `Created by ${input.spawnedBy.name}` }],

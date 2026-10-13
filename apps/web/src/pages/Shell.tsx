@@ -266,6 +266,7 @@ import type { SettingsSection } from "./SettingsOverlay";
 import { SpaceSearchResults } from "./SpaceSearch";
 import { BotSettings, CreateBotForm } from "./shell/bot-panel";
 import { BotCreatePicker } from "./shell/bot-picker";
+import { ChatModelPicker } from "./shell/chat-model-picker";
 import { ComposerReplyPreview, ReplyLine, TimeSeparator } from "./shell/chat-context";
 import { CommandPalette, isCommandPaletteHotkey } from "./shell/command-palette";
 import {
@@ -3699,6 +3700,9 @@ export function ShellPage() {
           <div className="px-6 pb-2 text-center text-[13px] text-destructive">
             <Trans>Teaching in progress. Stop teaching before sending a new message.</Trans>
           </div>
+        ) : null}
+        {active && !inGroup ? (
+          <ChatModelPicker key={active.id} bot={active} onChanged={refreshBots} />
         ) : null}
         {active || activeGroup ? (
           <Composer

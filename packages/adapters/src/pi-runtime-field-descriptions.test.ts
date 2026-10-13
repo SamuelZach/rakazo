@@ -113,6 +113,19 @@ describe("string enums keep their allowed values in a plain enum", () => {
     expect(rewritten).toEqual([]);
   });
 
+  it("preserves spawn model overrides through Pi's wire schema", () => {
+    const properties = wire(spawnBot!).properties;
+    expect(properties.model_provider?.description).toContain("list_models");
+    expect(properties.model_id?.description).toContain("list_models");
+    expect(() =>
+      validate(spawnBot!, {
+        name: "Scout",
+        model_provider: "openai",
+        model_id: "gpt-test",
+      }),
+    ).not.toThrow();
+  });
+
   it("shows spawn_bot's computer_mode choices and description", () => {
     expect(spawnBot).toBeDefined();
     const computerMode = wire(spawnBot!).properties.computer_mode;
