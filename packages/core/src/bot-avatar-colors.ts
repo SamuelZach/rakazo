@@ -1,3 +1,5 @@
+import { parseLiquidAvatar } from "@rakazo/contracts";
+
 export interface GrokColorDef {
   id: string;
   name: string;
@@ -126,6 +128,7 @@ export function resolvePersonaColorDef(
   explicitColor?: string | null,
 ): GrokColorDef {
   if (explicitColor) {
+    explicitColor = parseLiquidAvatar(explicitColor)?.color ?? explicitColor;
     const clean = explicitColor.toLowerCase();
     const foundById = GROK_COLOR_LIST.find((c) => c.id === clean || c.name.toLowerCase() === clean);
     if (foundById) return foundById;

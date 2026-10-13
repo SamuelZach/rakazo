@@ -4840,3 +4840,23 @@ msgstr "Adın"
 #: src/pages/Welcome.tsx
 msgid "Your team of always-on agents<0/>that you can give real work to."
 msgstr "Gerçek işler verebileceğin,<0/>her zaman açık agent takımın."
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Eyes"
+msgstr "Gözler"
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Animation"
+msgstr "Animasyon"
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Motion"
+msgstr "Hareket"
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Effects"
+msgstr "Efektler"
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Speed"
+msgstr "Hız"

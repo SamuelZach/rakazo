@@ -5,6 +5,8 @@ import {
   BOT_NAME_MAX_LENGTH,
   BOT_TITLE_MAX_LENGTH,
   normalizeCreateBotProfile,
+  parseBotAvatarValue,
+  updateLiquidAvatar,
 } from "@rakazo/contracts";
 import {
   connectedModelChoices,
@@ -19,6 +21,7 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-
 import { BotAvatar } from "../components/bot-avatar";
 import { ComputerModePicker } from "../components/computer-mode-picker";
 import { glassHeaderOptions } from "../components/glass-title";
+import { LiquidAvatarEditor } from "../components/liquid-avatar-editor";
 import type { MenuPickerChoice } from "../components/menu-picker";
 import { MenuPicker, MenuPickerMenu } from "../components/menu-picker";
 import { NativeActionButton } from "../components/native-action-button";
@@ -49,6 +52,9 @@ export default function BotSettingsScreen() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [color, setColor] = useState<string>(BOT_COLORS[0]);
+  const [avatarOptionsOpen, setAvatarOptionsOpen] = useState(false);
+  const parsedAvatar = parseBotAvatarValue(color);
+  const avatarColor = "color" in parsedAvatar ? parsedAvatar.color : "";
   const [computerMode, setComputerMode] = useState<ComputerMode>("team");
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [modelKey, setModelKey] = useState("");
@@ -385,9 +391,17 @@ export default function BotSettingsScreen() {
       >
         {bot ? (
           <View style={{ alignItems: "center", marginBottom: 24 }}>
-            <BotAvatar color={color} identity={bot.id} size={64} status={bot.status} />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("Customize bot avatar")}
+              accessibilityState={{ expanded: avatarOptionsOpen }}
+              onPress={() => setAvatarOptionsOpen(!avatarOptionsOpen)}
+            >
+              <BotAvatar color={color} identity={bot.id} size={64} status={bot.status} />
+            </Pressable>
           </View>
         ) : null}
+        {avatarOptionsOpen ? <LiquidAvatarEditor value={color} onChange={setColor} /> : null}
         <Text style={{ color: tokens.mutedForeground, fontSize: 14 }}>{t("Name")}</Text>
         <TextInput
           value={name}
@@ -454,15 +468,18 @@ export default function BotSettingsScreen() {
               key={option}
               accessibilityRole="radio"
               accessibilityLabel={t("Color {number}", { number: index + 1 })}
-              accessibilityState={{ checked: color === option }}
-              onPress={() => setColor(option)}
+              accessibilityState={{ checked: avatarColor.toLowerCase() === option.toLowerCase() }}
+              onPress={() => setColor(updateLiquidAvatar(color, {}, option))}
               style={{
                 width: 36,
                 height: 36,
                 borderRadius: 18,
                 backgroundColor: option,
                 borderWidth: 3,
-                borderColor: color === option ? tokens.foreground : "transparent",
+                borderColor:
+                  avatarColor.toLowerCase() === option.toLowerCase()
+                    ? tokens.foreground
+                    : "transparent",
               }}
             />
           ))}

@@ -4840,3 +4840,23 @@ msgstr "你的名字"
 #: src/pages/Welcome.tsx
 msgid "Your team of always-on agents<0/>that you can give real work to."
 msgstr "你的一支随时在线的 Agent 团队<0/>可以交给它们真正的工作。"
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Eyes"
+msgstr "眼睛"
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Animation"
+msgstr "动画"
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Motion"
+msgstr "动作"
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Effects"
+msgstr "效果"
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Speed"
+msgstr "速度"

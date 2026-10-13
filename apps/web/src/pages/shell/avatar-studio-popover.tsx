@@ -1,5 +1,14 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
+import type { LiquidAvatarOptions } from "@rakazo/contracts";
+import {
+  DEFAULT_LIQUID_AVATAR,
+  LIQUID_AVATAR_EXTRAS,
+  LIQUID_AVATAR_EYES,
+  LIQUID_AVATAR_MOTIONS,
+  LIQUID_AVATAR_SHAPES,
+  updateLiquidAvatar,
+} from "@rakazo/contracts";
 import {
   BotAvatar,
   DEFAULT_GROK_BOT_COLOR,
@@ -11,11 +20,17 @@ import {
   DialogTitle,
   defaultBotAvatarValue,
   GROK_BOT_COLORS,
-  GrokShapePreview,
+  LiquidBotAvatar,
   parseBotAvatar,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@rakazo/ui-web";
 import { Check, Pencil, Upload, X } from "lucide-react";
-import { type ClipboardEvent, type DragEvent, useRef, useState } from "react";
+import type { ClipboardEvent, DragEvent } from "react";
+import { useRef, useState } from "react";
 
 export interface AvatarStudioPopoverProps {
   value: string;
@@ -41,18 +56,15 @@ export function AvatarStudioPopover({
 
   const parsed = parseBotAvatar(value, identity);
   const currentColor = parsed.color || DEFAULT_GROK_BOT_COLOR;
-  const isDefaultLook = !parsed.isImage && parsed.shapeIndex === undefined;
+  const options = parsed.liquid ?? DEFAULT_LIQUID_AVATAR;
+  const isDefaultLook = !parsed.isImage && !parsed.liquid && parsed.shapeIndex === undefined;
 
-  function selectShape(shapeIndex: number) {
-    onChange(`${currentColor}::shape_${shapeIndex}`);
+  function selectOptions(patch: Partial<LiquidAvatarOptions>) {
+    onChange(updateLiquidAvatar(value, patch));
   }
 
   function selectColor(color: string) {
-    if (parsed.shapeIndex === undefined) {
-      onChange(color);
-      return;
-    }
-    onChange(`${color}::shape_${parsed.shapeIndex}`);
+    onChange(updateLiquidAvatar(value, {}, color));
   }
 
   function restoreDefaultAvatar() {
@@ -132,7 +144,7 @@ export function AvatarStudioPopover({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
           showCloseButton={false}
-          className="w-[360px] max-w-full gap-4 rounded-3xl p-5 sm:max-w-[360px]"
+          className="max-h-[85dvh] w-[360px] max-w-full gap-4 overflow-y-auto rounded-3xl p-5 sm:max-w-[360px]"
           data-testid="avatar-studio"
         >
           <DialogHeader className="flex-row items-center justify-between space-y-0">
@@ -215,17 +227,68 @@ export function AvatarStudioPopover({
                   </button>
                 </div>
                 <div className="grid grid-cols-4 place-items-center gap-2">
-                  {[0, 1, 2, 3, 4, 5, 6, 7].map((shapeIndex) => (
-                    <GrokShapePreview
-                      key={shapeIndex}
-                      shapeIndex={shapeIndex}
-                      color={currentColor}
-                      selected={!parsed.isImage && parsed.shapeIndex === shapeIndex}
-                      onClick={() => selectShape(shapeIndex)}
-                    />
+                  {LIQUID_AVATAR_SHAPES.map((shape) => (
+                    <button
+                      key={shape}
+                      type="button"
+                      aria-label={optionLabel(shape)}
+                      aria-pressed={
+                        !parsed.isImage &&
+                        parsed.shapeIndex === undefined &&
+                        options.shape === shape
+                      }
+                      data-testid={`avatar-shape-${shape}`}
+                      onClick={() => selectOptions({ shape })}
+                      className="flex size-14 items-center justify-center rounded-xl hover:bg-muted aria-pressed:ring-2 aria-pressed:ring-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <LiquidBotAvatar
+                        color={currentColor}
+                        size={48}
+                        options={{ ...options, shape }}
+                        animated={false}
+                      />
+                    </button>
                   ))}
                 </div>
               </div>
+
+              <AvatarOption
+                label={t`Eyes`}
+                value={options.eyes}
+                choices={LIQUID_AVATAR_EYES}
+                onChange={(eyes) => selectOptions({ eyes: eyes as LiquidAvatarOptions["eyes"] })}
+              />
+              <details className="border-t border-border pt-2">
+                <summary className="cursor-pointer text-xs text-muted-foreground">
+                  <Trans>Animation</Trans>
+                </summary>
+                <div className="mt-3 space-y-3">
+                  <AvatarOption
+                    label={t`Motion`}
+                    value={options.motion}
+                    choices={LIQUID_AVATAR_MOTIONS}
+                    onChange={(motion) =>
+                      selectOptions({ motion: motion as LiquidAvatarOptions["motion"] })
+                    }
+                  />
+                  <AvatarOption
+                    label={t`Effects`}
+                    value={options.extra}
+                    choices={LIQUID_AVATAR_EXTRAS}
+                    onChange={(extra) =>
+                      selectOptions({ extra: extra as LiquidAvatarOptions["extra"] })
+                    }
+                  />
+                  <AvatarOption
+                    label={t`Speed`}
+                    value={String(options.speed)}
+                    choices={[
+                      ...new Set([String(options.speed), "0.5", "0.75", "1", "1.5", "2", "3", "4"]),
+                    ]}
+                    onChange={(speed) => selectOptions({ speed: Number(speed) })}
+                  />
+                </div>
+              </details>
 
               <div className="border-t border-border pt-2">
                 <div className="mb-2 text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
@@ -307,5 +370,46 @@ export function AvatarStudioPopover({
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function optionLabel(value: string): string {
+  if (value === "drip-orbit") return "Drip + orbit";
+  if (/^[0-9.]+$/.test(value)) return `${value}×`;
+  return value[0]?.toUpperCase() + value.slice(1);
+}
+
+function AvatarOption({
+  label,
+  value,
+  choices,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  choices: readonly string[];
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <Select
+        value={value}
+        onValueChange={(next) => {
+          if (next) onChange(next);
+        }}
+      >
+        <SelectTrigger aria-label={label} size="sm">
+          <SelectValue>{optionLabel(value)}</SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {choices.map((choice) => (
+            <SelectItem key={choice} value={choice}>
+              {optionLabel(choice)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }

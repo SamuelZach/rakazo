@@ -4840,3 +4840,23 @@ msgstr "O seu nome"
 #: src/pages/Welcome.tsx
 msgid "Your team of always-on agents<0/>that you can give real work to."
 msgstr "Sua equipe de agentes sempre ativos<0/>, a quem você pode dar trabalho de verdade."
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Eyes"
+msgstr "Olhos"
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Animation"
+msgstr "Animação"
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Motion"
+msgstr "Movimento"
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Effects"
+msgstr "Efeitos"
+
+#: src/pages/shell/avatar-studio-popover.tsx
+msgid "Speed"
+msgstr "Velocidade"

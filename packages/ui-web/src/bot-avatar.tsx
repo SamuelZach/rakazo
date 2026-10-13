@@ -1,11 +1,12 @@
-import type { GrokColorDef } from "@rakazo/core";
+import type { GrokColorDef, LiquidAvatarOptions } from "@rakazo/core";
 import {
-  ACTIVE_RUN_STATUSES,
   avatarIdentitySeed,
+  BOT_AVATAR_WORKING_STATUSES,
   DEFAULT_GROK_BOT_COLOR,
   GROK_BOT_COLORS,
   GROK_COLOR_LIST,
   organicAvatarPath,
+  parseLiquidAvatar,
   resolvePersonaColorDef,
   SHIPPED_BOT_AVATAR_CENTER,
   SHIPPED_BOT_AVATAR_SHAPE_KEYS,
@@ -16,10 +17,12 @@ import {
 } from "@rakazo/core";
 import { tokens } from "@rakazo/ui-tokens";
 import type { CSSProperties } from "react";
-import { memo, useId, useMemo, useSyncExternalStore } from "react";
+import { memo, useId, useMemo, useRef, useSyncExternalStore } from "react";
 import type { AvatarStyle } from "./avatar-style.js";
 import { useAvatarStyle } from "./avatar-style.js";
 import { cn } from "./lib/utils.js";
+import { LiquidBotAvatar } from "./liquid-bot-avatar.js";
+import { useAvatarHover } from "./use-avatar-hover.js";
 import "./styles.css";
 
 export type { GrokColorDef };
@@ -57,7 +60,10 @@ export function parseBotAvatar(
   shapeIndex?: number;
   isImage: boolean;
   imageUrl?: string;
+  liquid?: LiquidAvatarOptions;
 } {
+  const liquid = parseLiquidAvatar(rawColor);
+  if (liquid) return { color: liquid.color, isImage: false, liquid: liquid.options };
   if (!rawColor) return { color: "#F97316", isImage: false };
   // Only data: image URLs are rendered. Arbitrary http(s)/blob values in `color`
   // must not become <img src> (SSRF / tracking when other members view the bot).
@@ -104,7 +110,7 @@ export const BotAvatar = memo(function BotAvatar({
   variant,
 }: BotAvatarProps) {
   const id = useId().replace(/[^a-zA-Z0-9-_]/g, "");
-  const isWorking = ACTIVE_RUN_STATUSES.some((s) => s === status);
+  const isWorking = BOT_AVATAR_WORKING_STATUSES.some((s) => s === status);
   const preferredVariant = useAvatarStyle();
 
   const parsed = useMemo(() => parseBotAvatar(color, identity), [color, identity]);
@@ -159,7 +165,11 @@ export const BotAvatar = memo(function BotAvatar({
     );
   }
 
-  if (parsed.shapeIndex === undefined && (variant ?? preferredVariant) === "organic") {
+  if (
+    !parsed.liquid &&
+    parsed.shapeIndex === undefined &&
+    (variant ?? preferredVariant) === "organic"
+  ) {
     return (
       <OrganicAvatar
         color={colorDef.hex}
@@ -173,13 +183,13 @@ export const BotAvatar = memo(function BotAvatar({
 
   if (parsed.shapeIndex === undefined) {
     return (
-      <RobotAvatar
-        colorDef={colorDef}
+      <LiquidBotAvatar
+        color={colorDef.hex}
+        options={parsed.liquid}
         size={size}
         isWorking={isWorking}
         className={className}
         identity={effectiveId}
-        gradientId={id}
       />
     );
   }
@@ -261,146 +271,6 @@ export const BotAvatar = memo(function BotAvatar({
   );
 });
 
-const VISOR_BORDER_PX = 1;
-
-function robotFaceLayout(size: number) {
-  const visorW = Math.round(size * 0.68);
-  const visorH = Math.round(size * 0.44);
-  const visorInnerW = Math.max(0, visorW - VISOR_BORDER_PX * 2);
-  const visorInnerH = Math.max(0, visorH - VISOR_BORDER_PX * 2);
-  const preferredEyeW = Math.max(4, Math.round(size * 0.14));
-  const preferredEyeH = Math.max(7, Math.round(size * 0.22));
-  const preferredEyeGap = Math.max(3, Math.round(size * 0.1));
-  const preferredSpan = preferredEyeW * 2 + preferredEyeGap;
-  const scale = Math.min(1, visorInnerW / preferredSpan, visorInnerH / preferredEyeH);
-  const eyeW = Math.floor(preferredEyeW * scale);
-  const eyeH = Math.floor(preferredEyeH * scale);
-  const eyeGap = Math.floor(preferredEyeGap * scale);
-  const eyeRadius = Math.max(2, Math.round(eyeW * 0.5));
-  return { visorW, visorH, eyeW, eyeH, eyeGap, eyeRadius };
-}
-
-function RobotAvatar({
-  colorDef,
-  size,
-  isWorking,
-  className,
-  identity,
-  gradientId,
-}: {
-  colorDef: GrokColorDef;
-  size: number;
-  isWorking: boolean;
-  className?: string;
-  identity: string;
-  gradientId: string;
-}) {
-  const seed = avatarIdentitySeed(identity || colorDef.hex);
-  const eyeVariant = seed % 4;
-  const idleDuration = (4.2 + ((seed * 7) % 28) / 10).toFixed(2);
-  const idleDelay = (-(((seed * 13) % 45) / 10)).toFixed(2);
-  const { visorW, visorH, eyeW, eyeH, eyeGap, eyeRadius } = robotFaceLayout(size);
-  const eyeGlow = `0 0 4px #fff, 0 0 8px #fff, 0 0 14px ${colorDef.light}`;
-  const idleEyeAnimation = {
-    "--rakazo-eye-animation-name": `rakazo-eyes-idle-${eyeVariant}`,
-    "--rakazo-eye-animation-duration": `${idleDuration}s`,
-    "--rakazo-eye-animation-easing": "cubic-bezier(0.4, 0, 0.2, 1)",
-    "--rakazo-eye-animation-delay": `${idleDelay}s`,
-  } as CSSProperties;
-  const workingEyeAnimation = {
-    "--rakazo-eye-animation-name": "rakazo-eyes-working",
-    "--rakazo-eye-animation-duration": "1.4s",
-    "--rakazo-eye-animation-easing": "ease-in-out",
-    "--rakazo-eye-animation-delay": "0s",
-  } as CSSProperties;
-
-  return (
-    <div
-      className={cn(
-        "rakazo-bot-avatar relative inline-flex shrink-0 items-center justify-center rounded-full select-none",
-        className,
-      )}
-      data-working={isWorking}
-      style={{
-        width: size,
-        height: size,
-        background: `radial-gradient(circle at 35% 26%, ${colorDef.light}, ${colorDef.hex} 55%, ${colorDef.dark} 100%)`,
-        boxShadow: isWorking
-          ? `0 0 0 2px rgba(255,255,255,0.25), 0 0 ${Math.round(size * 0.45)}px ${colorDef.hex}`
-          : `0 2px ${Math.max(4, Math.round(size * 0.15))}px rgba(0,0,0,0.4)`,
-      }}
-    >
-      <svg
-        className="rakazo-bot-avatar-ring pointer-events-none absolute"
-        style={{
-          inset: -4,
-          width: size + 8,
-          height: size + 8,
-          filter: `drop-shadow(0 0 6px ${colorDef.light}) drop-shadow(0 0 10px #ffffff)`,
-        }}
-        viewBox="0 0 48 48"
-        fill="none"
-        aria-hidden="true"
-      >
-        <circle
-          cx="24"
-          cy="24"
-          r="22"
-          stroke={`url(#${gradientId}-ring)`}
-          strokeWidth="3.2"
-          strokeLinecap="round"
-          strokeDasharray="45 80"
-        />
-        <circle cx="43" cy="24" r="2.8" fill="#ffffff" />
-        <defs>
-          <linearGradient id={`${gradientId}-ring`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
-            <stop offset="60%" stopColor={colorDef.light} stopOpacity="0.9" />
-            <stop offset="100%" stopColor={colorDef.light} stopOpacity="0" />
-          </linearGradient>
-        </defs>
-      </svg>
-      <div
-        className="rakazo-bot-avatar-visor relative flex items-center justify-center overflow-hidden"
-        style={{
-          width: visorW,
-          height: visorH,
-          boxSizing: "border-box",
-          borderRadius: Math.round(visorH * 0.52),
-          background: "linear-gradient(180deg, #101014 0%, #030305 100%)",
-          boxShadow: "inset 0 1.5px 3px rgba(0,0,0,0.95), 0 1px 1px rgba(255,255,255,0.18)",
-          border: "1px solid rgba(255,255,255,0.14)",
-        }}
-      >
-        {(["idle", "working"] as const).map((mode) => (
-          <div
-            key={mode}
-            className={`rakazo-bot-avatar-eyes rakazo-bot-avatar-eyes-${mode} absolute inset-0 z-10 flex items-center justify-center`}
-            style={{
-              gap: eyeGap,
-              ...(mode === "idle" ? idleEyeAnimation : workingEyeAnimation),
-            }}
-          >
-            {[0, 1].map((eye) => (
-              <span
-                key={eye}
-                className="block"
-                style={{
-                  width: eyeW,
-                  height: eyeH,
-                  borderRadius: eyeRadius,
-                  backgroundColor: "#fff",
-                  boxShadow: eyeGlow,
-                }}
-              />
-            ))}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function OrganicAvatar({
   color,
   identity,
@@ -414,6 +284,9 @@ function OrganicAvatar({
   isWorking: boolean;
   className?: string;
 }) {
+  const host = useRef<SVGSVGElement>(null);
+  const hovered = useAvatarHover(host);
+  const active = isWorking || hovered;
   const reducedMotion = useSyncExternalStore(
     subscribeToReducedMotion,
     reducedMotionSnapshot,
@@ -426,10 +299,12 @@ function OrganicAvatar({
 
   return (
     <svg
+      ref={host}
       viewBox="-60 -60 120 120"
       aria-hidden="true"
       className={cn("rakazo-organic-avatar overflow-visible select-none", className)}
       data-working={isWorking}
+      data-animating={active}
       data-shape-family={seed % 10}
       data-eye-pattern={seed % 4}
       style={{
@@ -454,7 +329,7 @@ function OrganicAvatar({
             } as CSSProperties
           }
         >
-          {!reducedMotion ? (
+          {active && !reducedMotion ? (
             <animate
               attributeName="d"
               values={`${shapeA};${shapeB};${shapeA}`}
