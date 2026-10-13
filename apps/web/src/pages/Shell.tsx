@@ -65,6 +65,7 @@ import {
   userVisibleMessages,
   withLiveStreamingProgress,
 } from "@rakazo/core";
+import { botMessageColors } from "@rakazo/ui-tokens";
 import type { GroupAvatarMember } from "@rakazo/ui-web";
 import {
   AvatarStyleProvider,
@@ -119,7 +120,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import type { ClipboardEvent, DragEvent, MutableRefObject, RefObject } from "react";
+import type { ClipboardEvent, CSSProperties, DragEvent, MutableRefObject, RefObject } from "react";
 import {
   Fragment,
   memo,
@@ -266,8 +267,8 @@ import type { SettingsSection } from "./SettingsOverlay";
 import { SpaceSearchResults } from "./SpaceSearch";
 import { BotSettings, CreateBotForm } from "./shell/bot-panel";
 import { BotCreatePicker } from "./shell/bot-picker";
-import { ChatModelPicker } from "./shell/chat-model-picker";
 import { ComposerReplyPreview, ReplyLine, TimeSeparator } from "./shell/chat-context";
+import { ChatModelPicker } from "./shell/chat-model-picker";
 import { CommandPalette, isCommandPaletteHotkey } from "./shell/command-palette";
 import {
   ClearConversationDialog,
@@ -2755,6 +2756,11 @@ export function ShellPage() {
     .slice(0, 2)
     .toUpperCase();
 
+  const activeMessageColors =
+    active && !inGroup
+      ? botMessageColors(resolvePersonaColorDef(active.id, active.color).hex)
+      : undefined;
+
   const shell = (
     <div
       data-testid="shell-root"
@@ -3566,6 +3572,14 @@ export function ShellPage() {
         aria-hidden={mobileSidebarOpen || undefined}
         inert={mobileSidebarOpen}
         className="isolate flex min-w-0 flex-1 flex-col bg-background"
+        style={
+          activeMessageColors
+            ? ({
+                "--chat-user": activeMessageColors.background,
+                "--chat-user-foreground": activeMessageColors.foreground,
+              } as CSSProperties)
+            : undefined
+        }
       >
         {/* Inside main so the composer and its menus stay above it. */}
         {!mobileSidebarOpen ? (
@@ -6051,7 +6065,7 @@ export const Composer = memo(function Composer({
         ref={composerBarRef}
         data-testid="composer-bar"
         data-expanded={expanded}
-        className={`grid grid-cols-[auto_minmax(0,1fr)_auto] content-end items-center rounded-[26px] border border-border bg-background pe-2.5 ps-3 transition-colors focus-within:border-ring ${
+        className={`grid grid-cols-[auto_minmax(0,1fr)_auto] content-end items-center rounded-[26px] border border-border bg-secondary pe-2.5 ps-3 transition-colors focus-within:border-ring ${
           expanded ? "gap-x-2 gap-y-2 pb-[9px] pt-3" : "gap-x-3.5 py-[9px]"
         }`}
       >
@@ -6225,7 +6239,7 @@ export const Composer = memo(function Composer({
                 aria-label={t`Send`}
                 disabled={sending || !canSend || disabled}
                 onClick={send}
-                className="size-8 rounded-full bg-white text-black hover:bg-white/90 shadow-sm transition-transform active:scale-95"
+                className="size-8 rounded-full bg-chat-user text-chat-user-foreground hover:brightness-110 shadow-sm transition-transform active:scale-95"
               >
                 <ArrowUp size={16} strokeWidth={2.2} />
               </Button>
@@ -6246,7 +6260,7 @@ export const Composer = memo(function Composer({
               aria-label={t`Send`}
               disabled={sending || !canSend || disabled}
               onClick={send}
-              className="size-8 shrink-0 rounded-full bg-white text-black hover:bg-white/90 shadow-sm transition-transform active:scale-95 disabled:bg-white/10 disabled:text-muted-foreground/30 disabled:shadow-none"
+              className="size-8 shrink-0 rounded-full bg-chat-user text-chat-user-foreground hover:brightness-110 shadow-sm transition-transform active:scale-95 disabled:bg-muted disabled:text-muted-foreground/30 disabled:shadow-none"
             >
               <ArrowUp size={16} strokeWidth={2.2} />
             </Button>
@@ -6932,6 +6946,7 @@ const MessageView = memo(function MessageView({
             <div key={i} className="flex w-fit max-w-full justify-end [@media(hover:none)]:w-full">
               <div
                 data-testid="message-user-bubble"
+                style={{ "--link": "var(--chat-user-foreground)" } as CSSProperties}
                 data-quote-message-id={quoteMessageId}
                 className="max-w-full whitespace-pre-wrap wrap-anywhere rounded-[20px] bg-chat-user px-[18px] py-3 text-[15.5px] leading-[1.45] text-chat-user-foreground"
                 dir="auto"

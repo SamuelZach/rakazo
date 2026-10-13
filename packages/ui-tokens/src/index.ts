@@ -50,40 +50,40 @@ export type ColorTokens = {
 };
 
 export const darkTokens = {
-  background: "#0B0C0E",
-  foreground: "#ECECEE",
-  card: "#141518",
-  cardForeground: "#ECECEE",
-  popover: "#141518",
-  popoverForeground: "#ECECEE",
+  background: "#111111",
+  foreground: "#EEEEEE",
+  card: "#1B1B1B",
+  cardForeground: "#EEEEEE",
+  popover: "#1B1B1B",
+  popoverForeground: "#EEEEEE",
   primary: "#F1F1EF",
-  primaryForeground: "#0B0C0E",
-  secondary: "#18191E",
-  secondaryForeground: "#ECECEE",
-  chatUser: "#22242B",
-  chatUserForeground: "#ECECEE",
-  muted: "#141518",
-  mutedForeground: "#85858A",
-  accent: "#1A1B20",
-  accentForeground: "#ECECEE",
+  primaryForeground: "#111111",
+  secondary: "#202020",
+  secondaryForeground: "#EEEEEE",
+  chatUser: "#2A2A2A",
+  chatUserForeground: "#EEEEEE",
+  muted: "#1B1B1B",
+  mutedForeground: "#888888",
+  accent: "#242424",
+  accentForeground: "#EEEEEE",
   destructive: "#EF4444",
   destructiveForeground: "#FFFFFF",
-  border: "#1E2026",
-  input: "#18191E",
-  ring: "#3B82F6",
-  sidebar: "#111215",
-  sidebarForeground: "#ECECEE",
-  sidebarBorder: "#1C1D22",
-  sidebarAccent: "#1A1B20",
-  sidebarAccentForeground: "#ECECEE",
+  border: "#242424",
+  input: "#202020",
+  ring: "#888888",
+  sidebar: "#0D0D0D",
+  sidebarForeground: "#EEEEEE",
+  sidebarBorder: "#1B1B1B",
+  sidebarAccent: "#242424",
+  sidebarAccentForeground: "#EEEEEE",
   link: "#3B82F6",
   faviconPlate: "#FFFFFF",
   success: "#4ECB71",
   warning: "#E9C46A",
   statusWorking: "#3B82F6",
   overlay: "rgba(4, 4, 5, 0.72)",
-  scrollbar: "#1E2026",
-  scrollbarHover: "#2E313A",
+  scrollbar: "#242424",
+  scrollbarHover: "#383838",
 } as const satisfies ColorTokens;
 
 export const lightTokens = {
@@ -225,4 +225,36 @@ export function renderTokensCss(): string {
     renderBlock(':root,\n[data-theme="dark"]', "dark", darkTokens),
     renderBlock('[data-theme="light"]', "light", lightTokens),
   ].join("\n\n")}\n`;
+}
+
+const botMessageForeground = { dark: "#000000", light: "#FFFFFF" } as const;
+
+/** Bot identity fill with the more legible neutral foreground. */
+export function botMessageColors(color: string): { background: string; foreground: string } {
+  const match = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(color);
+  if (!match) return { background: darkTokens.chatUser, foreground: darkTokens.chatUserForeground };
+  const hex =
+    match[1]!.length === 3
+      ? match[1]!
+          .split("")
+          .map((digit) => digit + digit)
+          .join("")
+      : match[1]!;
+  function luminance(value: string): number {
+    const channels = [0, 2, 4].map((offset) => {
+      const channel = Number.parseInt(value.slice(offset, offset + 2), 16) / 255;
+      return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+    });
+    return channels[0]! * 0.2126 + channels[1]! * 0.7152 + channels[2]! * 0.0722;
+  }
+  const fill = luminance(hex);
+  const dark = luminance(botMessageForeground.dark.slice(1));
+  const light = luminance(botMessageForeground.light.slice(1));
+  const darkContrast = (Math.max(fill, dark) + 0.05) / (Math.min(fill, dark) + 0.05);
+  const lightContrast = (Math.max(fill, light) + 0.05) / (Math.min(fill, light) + 0.05);
+  return {
+    background: color,
+    foreground:
+      darkContrast >= lightContrast ? botMessageForeground.dark : botMessageForeground.light,
+  };
 }

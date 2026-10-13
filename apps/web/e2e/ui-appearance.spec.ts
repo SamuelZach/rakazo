@@ -93,6 +93,20 @@ test("account settings appearance control switches to light mode", async ({ page
   await expect(settings).toBeHidden();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await captureSidebarSearchSelected(page, testInfo, "sidebar-search-selected-dark");
+  await expect(page.locator("main")).toHaveCSS("background-color", "rgb(17, 17, 17)");
+  await expect(page.locator("aside").first()).toHaveCSS("background-color", "rgb(13, 13, 13)");
+  await composer.fill("Check the next deadline.");
+  const send = page.getByRole("button", { name: "Send", exact: true });
+  const sendColor = await send.evaluate((element) => getComputedStyle(element).backgroundColor);
+  await send.click();
+  const bubble = page
+    .getByTestId("message-user-bubble")
+    .filter({ hasText: "Check the next deadline." });
+  await expect(bubble).toBeVisible();
+  await expect(bubble).toHaveCSS("background-color", sendColor);
+  await page.getByTestId("bot-settings-trigger").click();
+  await expect(page.getByTestId("side-panel")).toHaveCSS("background-color", "rgb(13, 13, 13)");
+  await captureScreenshot(page, testInfo, "bot-colored-dark-chat");
 });
 
 test("sidebar bot rows hover with the same tone as the integrations row", async ({

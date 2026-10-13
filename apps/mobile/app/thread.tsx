@@ -39,6 +39,8 @@ import {
   userVisibleMessages,
   withLiveStreamingProgress,
 } from "@rakazo/core";
+import type { ColorTokens } from "@rakazo/ui-tokens";
+import { botMessageColors } from "@rakazo/ui-tokens";
 import * as Clipboard from "expo-clipboard";
 import {
   useFocusEffect,
@@ -2580,6 +2582,7 @@ function Thread({ sessionEpoch }: { sessionEpoch: number }) {
           replyQuote={replyQuote}
           attachmentIds={activePendingAttachments.map((attachment) => attachment.id)}
           botId={botId}
+          botColor={currentBot?.color}
           onCall={onCall}
           working={working}
           sending={sending}
@@ -3156,6 +3159,18 @@ const MessageBubble = memo(function MessageBubble({
   const { t } = useI18n();
   const [peerExpanded, setPeerExpanded] = useState(false);
   const artifactTarget: MobileArtifactTarget = groupId ? { groupId } : { botId };
+  const userBot = !groupId ? bots.find((bot) => bot.id === botId) : undefined;
+  const userColors = userBot
+    ? botMessageColors(resolvePersonaColorDef(userBot.id, userBot.color).hex)
+    : undefined;
+  const messageTokens = userColors
+    ? {
+        ...tokens,
+        secondary: userColors.background,
+        secondaryForeground: userColors.foreground,
+        link: userColors.foreground,
+      }
+    : tokens;
   const cardBotId = message.botId ?? botId;
   const computerBotId = message.botId ?? (groupId ? undefined : botId);
   const appConnectBlocks = message.blocks.filter(
@@ -3591,7 +3606,7 @@ const MessageBubble = memo(function MessageBubble({
           borderRadius: 20,
           borderWidth: 1,
           borderColor: tokens.border,
-          backgroundColor: message.role === "user" ? tokens.secondary : tokens.muted,
+          backgroundColor: message.role === "user" ? messageTokens.secondary : tokens.muted,
           paddingHorizontal: 14,
           paddingVertical: 12,
           gap: 8,
@@ -3612,7 +3627,7 @@ const MessageBubble = memo(function MessageBubble({
           <MessageCaption
             role={message.role}
             text={caption}
-            tokens={tokens}
+            tokens={message.role === "user" ? messageTokens : tokens}
             colorScheme={colorScheme}
             streaming={message.id.startsWith("progress:")}
           />
@@ -3627,7 +3642,7 @@ const MessageBubble = memo(function MessageBubble({
                 name={attachment.name ?? t("Image")}
                 mimeType={attachment.mimeType ?? "image/png"}
                 labelColor={
-                  message.role === "user" ? tokens.secondaryForeground : tokens.foreground
+                  message.role === "user" ? messageTokens.secondaryForeground : tokens.foreground
                 }
                 pressableProps={actionProps}
                 onOpen={() =>
@@ -3657,7 +3672,10 @@ const MessageBubble = memo(function MessageBubble({
               >
                 <Text
                   style={{
-                    color: message.role === "user" ? tokens.secondaryForeground : tokens.foreground,
+                    color:
+                      message.role === "user"
+                        ? messageTokens.secondaryForeground
+                        : tokens.foreground,
                     fontSize: 15,
                   }}
                 >
@@ -3690,7 +3708,8 @@ const MessageBubble = memo(function MessageBubble({
             >
               <Text
                 style={{
-                  color: message.role === "user" ? tokens.secondaryForeground : tokens.foreground,
+                  color:
+                    message.role === "user" ? messageTokens.secondaryForeground : tokens.foreground,
                   fontSize: 15,
                 }}
               >
@@ -3750,6 +3769,7 @@ const MessageBubble = memo(function MessageBubble({
         <MessageTextCard
           key={`${message.id}-content-${index}`}
           message={{ ...message, blocks: segment.blocks }}
+          userTokens={messageTokens}
           speaker={index === firstContent ? speaker : undefined}
           speakerColor={index === firstContent ? speakerColor : undefined}
           actionProps={actionProps}
@@ -3791,17 +3811,19 @@ const MessageBubble = memo(function MessageBubble({
 
 function MessageTextCard({
   message,
+  userTokens,
   speaker,
   speakerColor,
   actionProps,
 }: {
   message: MobileMessage;
+  userTokens: ColorTokens;
   speaker?: string;
   speakerColor?: string;
   actionProps: MessageActionProps;
 }) {
   const colorScheme = useResolvedAppearance();
-  const tokens = mobileTokens();
+  const tokens = message.role === "user" ? userTokens : mobileTokens();
   const contentText = blockText(message);
   if (!contentText) return null;
   return (
